@@ -252,57 +252,151 @@
                 font-size: 14px;
             }
         }
+
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .password-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .password-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .password-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+        }
+
+        .password-error {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <h1>Rehearsal Schedule</h1>
-    
-    <div class="input-container">
-        <label for="spreadsheetUrl">Google Spreadsheet URL:</label>
-        <input type="text" id="spreadsheetUrl" placeholder="Paste your Google Spreadsheet URL here" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRTZ4MOsGIDE8EmtY5DqV_goA_05RNJx3Y5HlaPm7jH3Uovtfa4fXckAdjOHF5T7dYHlSRGAUiSTNZe/pubhtml?gid=1895043261">
-        <button onclick="updateSpreadsheet()">Update</button>
-    </div>
-
-    <div class="filter-row">
-        <div class="filter-group">
-            <label for="castFilter">Select Cast:</label>
-            <select id="castFilter" onchange="filterTable()">
-                <option value="All">All</option>
-                <option value="Jabberwocky">Jabberwocky</option>
-                <option value="Bandersnatch">Bandersnatch</option>
-            </select>
-        </div>
-        <div class="filter-group call-filter">
-            <label for="callFilter">Call Filter (comma-separated):</label>
-            <input type="text" id="callFilter" placeholder="Enter call filters separated by commas" oninput="filterTable()">
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-container">
+            <h2>Enter Password</h2>
+            <input type="password" id="passwordInput" class="password-input" placeholder="Enter password">
+            <button onclick="checkPassword()" class="debug-toggle">Submit</button>
+            <div id="passwordError" class="password-error">Incorrect password. Please try again.</div>
         </div>
     </div>
 
-    <div class="row-counter" id="rowCounter">Showing 0 rows</div>
+    <div class="main-content" id="mainContent">
+        <h1>Rehearsal Schedule</h1>
+        
+        <div class="input-container">
+            <label for="spreadsheetUrl">Google Spreadsheet URL:</label>
+            <input type="text" id="spreadsheetUrl" placeholder="Paste your Google Spreadsheet URL here" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRTZ4MOsGIDE8EmtY5DqV_goA_05RNJx3Y5HlaPm7jH3Uovtfa4fXckAdjOHF5T7dYHlSRGAUiSTNZe/pubhtml?gid=1895043261">
+            <button onclick="updateSpreadsheet()">Update</button>
+        </div>
 
-    <table id="scheduleTable">
-        <thead>
-            <tr>
-                <th>Day</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Cast</th>
-                <th>Call</th>
-                <th>Note</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-    </table>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="castFilter">Select Cast:</label>
+                <select id="castFilter" onchange="filterTable()">
+                    <option value="All">All</option>
+                    <option value="Jabberwocky">Jabberwocky</option>
+                    <option value="Bandersnatch">Bandersnatch</option>
+                </select>
+            </div>
+            <div class="filter-group call-filter">
+                <label for="callFilter">Call Filter (comma-separated):</label>
+                <input type="text" id="callFilter" placeholder="Enter call filters separated by commas" oninput="filterTable()">
+            </div>
+        </div>
 
-    <button class="debug-toggle" onclick="toggleDebugInfo()">Show Debug Information</button>
+        <div class="row-counter" id="rowCounter">Showing 0 rows</div>
 
-    <div id="debugInfo">
-        <h3>Debug Information:</h3>
-        <div id="status">Loading...</div>
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Cast</th>
+                    <th>Call</th>
+                    <th>Note</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <button class="debug-toggle" onclick="toggleDebugInfo()">Show Debug Information</button>
+
+        <div id="debugInfo">
+            <h3>Debug Information:</h3>
+            <div id="status">Loading...</div>
+        </div>
     </div>
 
     <script>
+        // Password protection
+        function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const mainContent = document.getElementById('mainContent');
+            const passwordOverlay = document.getElementById('passwordOverlay');
+            const passwordError = document.getElementById('passwordError');
+
+            if (password === 'mimsy') {
+                mainContent.classList.add('visible');
+                passwordOverlay.style.display = 'none';
+                // Initialize the page after password is correct
+                init();
+            } else {
+                passwordError.style.display = 'block';
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        // Add enter key support for password input
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
         // Store the processed data globally
         let scheduleData = [];
         let isDebugVisible = false;
