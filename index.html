@@ -147,14 +147,85 @@
             background-color: #357abd;
         }
 
-        .row-counter {
-            margin: 20px 0;
-            font-size: 16px;
-            color: var(--text-color);
+        .row-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             background: white;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 10px 0;
+        }
+
+        .row-counter {
+            margin: 0;
+            font-size: 16px;
+            color: var(--text-color);
+            padding: 12px 0;
+        }
+
+        .remaining-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+        }
+
+        .toggle-label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
         }
 
         table {
@@ -346,7 +417,20 @@
             </div>
         </div>
 
-        <div class="row-counter" id="rowCounter">Showing 0 rows</div>
+        <div class="filter-row">
+            <div class="filter-group">
+                <div class="row-counter" id="rowCounter">Found 0 rows</div>
+            </div>
+            <div class="filter-group call-filter">
+                <div class="remaining-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="remainingToggle" onchange="filterTable()">
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label">Remaining</span>
+                </div>
+            </div>
+        </div>
 
         <table id="scheduleTable">
             <thead>
@@ -453,19 +537,63 @@
             updateDebugInfo('Filtering table...');
             const selectedCast = document.getElementById('castFilter').value;
             const callFilterText = document.getElementById('callFilter').value;
-            const callFilters = callFilterText.split(',').map(filter => filter.trim().toLowerCase());
+            const showRemaining = document.getElementById('remainingToggle').checked;
+            const callFilters = callFilterText
+                .split(',')
+                .map(filter => filter.trim())
+                .filter(filter => filter.length > 0)
+                .map(filter => filter.toLowerCase());
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
 
             try {
                 let rowCount = 0;
+                const currentDate = new Date();
+                currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+                updateDebugInfo(`Current date for comparison: ${currentDate.toLocaleDateString()}`);
+
                 scheduleData.forEach(row => {
                     const castMatch = selectedCast === 'All' || row.cast === selectedCast || row.cast === 'Both' || row.cast === 'TBA';
                     const callMatch = callFilters.length === 0 || callFilters.some(filter => 
                         row.call.toLowerCase().includes(filter)
                     );
+                    
+                    // Date comparison for remaining filter
+                    let dateMatch = true;
+                    if (showRemaining && row.date) {
+                        updateDebugInfo(`Raw date string: "${row.date}"`);
+                        
+                        // Parse the date string (format: "Month Day")
+                        const dateParts = row.date.split(' ');
+                        updateDebugInfo(`Date parts: ${JSON.stringify(dateParts)}`);
+                        
+                        if (dateParts.length === 2) {
+                            const month = dateParts[0];
+                            const day = parseInt(dateParts[1], 10);
+                            
+                            // Get current year
+                            const currentYear = new Date().getFullYear();
+                            
+                            // Convert month name to month number (0-11)
+                            const monthIndex = new Date(`${month} 1, ${currentYear}`).getMonth();
+                            
+                            if (!isNaN(monthIndex) && !isNaN(day)) {
+                                const rowDate = new Date(currentYear, monthIndex, day);
+                                rowDate.setHours(0, 0, 0, 0);
+                                
+                                dateMatch = rowDate >= currentDate;
+                                updateDebugInfo(`Comparing dates - Row date: ${rowDate.toLocaleDateString()}, Current date: ${currentDate.toLocaleDateString()}, Match: ${dateMatch}`);
+                            } else {
+                                updateDebugInfo(`Invalid date parts - skipping date comparison`);
+                                dateMatch = true; // Skip date filtering for invalid dates
+                            }
+                        } else {
+                            updateDebugInfo(`Invalid date format - skipping date comparison`);
+                            dateMatch = true; // Skip date filtering for invalid dates
+                        }
+                    }
 
-                    if (castMatch && callMatch) {
+                    if (castMatch && callMatch && dateMatch) {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${row.day}</td>
@@ -479,8 +607,8 @@
                         rowCount++;
                     }
                 });
-                document.getElementById('rowCounter').textContent = `Showing ${rowCount} rows`;
-                updateDebugInfo(`Displayed filtered data for ${selectedCast}${callFilterText ? ` with call filters: ${callFilterText}` : ''}`);
+                document.getElementById('rowCounter').textContent = `Found ${rowCount} rows`;
+                updateDebugInfo(`Displayed filtered data for ${selectedCast}${callFilterText ? ` with call filters: ${callFilterText}` : ''}${showRemaining ? ' (remaining dates only)' : ''}`);
             } catch (error) {
                 updateDebugInfo(`Error filtering table: ${error.message}`);
                 console.error('Error filtering table:', error);
