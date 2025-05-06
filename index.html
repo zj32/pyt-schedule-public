@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rehearsal Schedule</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5f6fa;
+            --border-color: #e1e4e8;
+            --text-color: #2c3e50;
+            --hover-color: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .input-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .input-container input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-container input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-group {
+            flex: 1;
+        }
+
+        .filter-group.call-filter {
+            flex: 2;
+            min-width: 0;
+        }
+
+        .filter-group.call-filter input {
+            width: 100%;
+            min-width: 300px;
+            max-width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .filter-group.call-filter input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .filter-group.call-filter input::placeholder {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .filter-group.call-filter input:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        .row-counter {
+            margin: 20px 0;
+            font-size: 16px;
+            color: var(--text-color);
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--hover-color);
+        }
+
+        tr:hover {
+            background-color: #f0f2f5;
+        }
+
+        #debugInfo {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none; /* Hide by default */
+        }
+
+        #debugInfo h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        #status {
+            font-family: monospace;
+            white-space: pre-wrap;
+            color: #666;
+        }
+
+        .debug-toggle {
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .debug-toggle:hover {
+            background-color: #e9ecef;
+        }
+
+        .debug-toggle.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-group.call-filter {
+                flex: 1;
+            }
+
+            .filter-group.call-filter input {
+                min-width: 100%;
+            }
+
+            th, td {
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Rehearsal Schedule</h1>
+    
+    <div class="input-container">
+        <label for="spreadsheetUrl">Google Spreadsheet URL:</label>
+        <input type="text" id="spreadsheetUrl" placeholder="Paste your Google Spreadsheet URL here" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRTZ4MOsGIDE8EmtY5DqV_goA_05RNJx3Y5HlaPm7jH3Uovtfa4fXckAdjOHF5T7dYHlSRGAUiSTNZe/pubhtml?gid=1895043261">
+        <button onclick="updateSpreadsheet()">Update</button>
+    </div>
+
+    <div class="filter-row">
+        <div class="filter-group">
+            <label for="castFilter">Select Cast:</label>
+            <select id="castFilter" onchange="filterTable()">
+                <option value="All">All</option>
+                <option value="Jabberwocky">Jabberwocky</option>
+                <option value="Bandersnatch">Bandersnatch</option>
+            </select>
+        </div>
+        <div class="filter-group call-filter">
+            <label for="callFilter">Call Filter (comma-separated):</label>
+            <input type="text" id="callFilter" placeholder="Enter call filters separated by commas" oninput="filterTable()">
+        </div>
+    </div>
+
+    <div class="row-counter" id="rowCounter">Showing 0 rows</div>
+
+    <table id="scheduleTable">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Cast</th>
+                <th>Call</th>
+                <th>Note</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+    </table>
+
+    <button class="debug-toggle" onclick="toggleDebugInfo()">Show Debug Information</button>
+
+    <div id="debugInfo">
+        <h3>Debug Information:</h3>
+        <div id="status">Loading...</div>
+    </div>
+
+    <script>
+        // Store the processed data globally
+        let scheduleData = [];
+        let isDebugVisible = false;
+
+        // Function to toggle debug information panel
+        function toggleDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            const toggleButton = document.querySelector('.debug-toggle');
+            isDebugVisible = !isDebugVisible;
+            
+            debugInfo.style.display = isDebugVisible ? 'block' : 'none';
+            toggleButton.textContent = isDebugVisible ? 'Hide Debug Information' : 'Show Debug Information';
+            toggleButton.classList.toggle('active', isDebugVisible);
+        }
+
+        // Function to update debug information
+        function updateDebugInfo(message) {
+            const debugDiv = document.getElementById('status');
+            debugDiv.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+            console.log(message);
+        }
+
+        // Function to process the data
+        function processData(data) {
+            updateDebugInfo('Processing data...');
+            let lastDay = '';
+            let lastDate = '';
+            
+            try {
+                const processed = data.map(row => {
+                    const day = (row[0] || '').trim() || lastDay;
+                    const date = (row[1] || '').trim() || lastDate;
+                    const time = (row[2] || '').trim();
+                    const cast = (row[3] || '').trim() || 'Both';
+                    const call = (row[4] || '').trim();
+                    const note = (row[5] || '').trim();
+
+                    lastDay = day;
+                    lastDate = date;
+
+                    return { day, date, time, cast, call, note };
+                });
+                updateDebugInfo(`Processed ${processed.length} rows`);
+                return processed;
+            } catch (error) {
+                updateDebugInfo(`Error processing data: ${error.message}`);
+                console.error('Error processing data:', error);
+                return [];
+            }
+        }
+
+        // Function to filter and display the table
+        function filterTable() {
+            updateDebugInfo('Filtering table...');
+            const selectedCast = document.getElementById('castFilter').value;
+            const callFilterText = document.getElementById('callFilter').value;
+            const callFilters = callFilterText.split(',').map(filter => filter.trim().toLowerCase());
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            try {
+                let rowCount = 0;
+                scheduleData.forEach(row => {
+                    const castMatch = selectedCast === 'All' || row.cast === selectedCast || row.cast === 'Both' || row.cast === 'TBA';
+                    const callMatch = callFilters.length === 0 || callFilters.some(filter => 
+                        row.call.toLowerCase().includes(filter)
+                    );
+
+                    if (castMatch && callMatch) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.day}</td>
+                            <td>${row.date}</td>
+                            <td>${row.time}</td>
+                            <td>${row.cast}</td>
+                            <td>${row.call}</td>
+                            <td>${row.note}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                        rowCount++;
+                    }
+                });
+                document.getElementById('rowCounter').textContent = `Showing ${rowCount} rows`;
+                updateDebugInfo(`Displayed filtered data for ${selectedCast}${callFilterText ? ` with call filters: ${callFilterText}` : ''}`);
+            } catch (error) {
+                updateDebugInfo(`Error filtering table: ${error.message}`);
+                console.error('Error filtering table:', error);
+            }
+        }
+
+        // Function to fetch data from Google Spreadsheet
+        async function fetchSpreadsheetData() {
+            try {
+                const spreadsheetUrl = document.getElementById('spreadsheetUrl').value;
+                updateDebugInfo('Fetching data from Google Spreadsheet...');
+                const response = await fetch(spreadsheetUrl);
+                const html = await response.text();
+                
+                // Create a temporary div to parse the HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // Find the table in the response
+                const table = tempDiv.querySelector('table');
+                if (!table) {
+                    throw new Error('Table not found in the response');
+                }
+
+                // Convert table to array of arrays, skipping the first row (headers)
+                const rows = Array.from(table.querySelectorAll('tr'));
+                const data = rows.slice(1).map(row => 
+                    Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.trim())
+                );
+
+                updateDebugInfo(`Fetched ${data.length} rows from spreadsheet (excluding headers)`);
+                return data;
+            } catch (error) {
+                updateDebugInfo(`Error fetching data: ${error.message}`);
+                console.error('Error fetching data:', error);
+                return [];
+            }
+        }
+
+        // Function to update the spreadsheet
+        async function updateSpreadsheet() {
+            try {
+                const data = await fetchSpreadsheetData();
+                scheduleData = processData(data);
+                filterTable();
+            } catch (error) {
+                updateDebugInfo(`Error updating spreadsheet: ${error.message}`);
+                console.error('Error updating spreadsheet:', error);
+            }
+        }
+
+        // Initialize the page
+        async function init() {
+            try {
+                const data = await fetchSpreadsheetData();
+                scheduleData = processData(data);
+                filterTable();
+            } catch (error) {
+                updateDebugInfo(`Error initializing: ${error.message}`);
+                console.error('Error initializing:', error);
+            }
+        }
+
+        // Initialize when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html> 
