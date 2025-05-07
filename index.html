@@ -375,25 +375,12 @@
         }
 
         .main-content {
-            display: none;
-        }
-
-        .main-content.visible {
             display: block;
         }
     </style>
 </head>
 <body>
-    <div class="password-overlay" id="passwordOverlay">
-        <div class="password-container">
-            <h2>Enter Password</h2>
-            <input type="password" id="passwordInput" class="password-input" placeholder="Enter password">
-            <button onclick="checkPassword()" class="debug-toggle">Submit</button>
-            <div id="passwordError" class="password-error">Incorrect password. Please try again.</div>
-        </div>
-    </div>
-
-    <div class="main-content" id="mainContent">
+    <div class="main-content">
         <h1>Rehearsal Schedule</h1>
         
         <div class="input-container">
@@ -456,31 +443,6 @@
     </div>
 
     <script>
-        // Password protection
-        function checkPassword() {
-            const password = document.getElementById('passwordInput').value;
-            const mainContent = document.getElementById('mainContent');
-            const passwordOverlay = document.getElementById('passwordOverlay');
-            const passwordError = document.getElementById('passwordError');
-
-            if (password === 'mimsy') {
-                mainContent.classList.add('visible');
-                passwordOverlay.style.display = 'none';
-                // Initialize the page after password is correct
-                init();
-            } else {
-                passwordError.style.display = 'block';
-                document.getElementById('passwordInput').value = '';
-            }
-        }
-
-        // Add enter key support for password input
-        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                checkPassword();
-            }
-        });
-
         // Store the processed data globally
         let scheduleData = [];
         let isDebugVisible = false;
