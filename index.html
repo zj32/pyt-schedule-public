@@ -350,7 +350,7 @@
             </div>
             <div class="filter-group call-filter">
                 <label for="callFilter">Call Filter (comma-separated):</label>
-                <input type="text" id="callFilter" placeholder="Enter call filters separated by commas" oninput="filterTable()">
+                <input type="text" id="callFilter" placeholder="Enter call filters separated by commas" oninput="debouncedFilterTable()">
             </div>
         </div>
 
@@ -396,6 +396,41 @@
         // Store the processed data globally
         let scheduleData = [];
         let isDebugVisible = false;
+        let filterTimeout = null;
+
+        // Debounced filter function
+        function debouncedFilterTable() {
+            if (filterTimeout) {
+                clearTimeout(filterTimeout);
+            }
+            filterTimeout = setTimeout(() => {
+                filterTable();
+                // Save filter state after the debounce delay
+                saveFilterState();
+            }, 300); // 300ms delay
+        }
+
+        // Function to save filter state
+        function saveFilterState() {
+            const castFilter = document.getElementById('castFilter').value;
+            const callFilter = document.getElementById('callFilter').value;
+            const remainingToggle = document.getElementById('remainingToggle').checked;
+
+            localStorage.setItem('castFilter', castFilter);
+            localStorage.setItem('callFilter', callFilter);
+            localStorage.setItem('remainingToggle', remainingToggle);
+        }
+
+        // Function to load filter state
+        function loadFilterState() {
+            const castFilter = localStorage.getItem('castFilter') || 'All';
+            const callFilter = localStorage.getItem('callFilter') || '';
+            const remainingToggle = localStorage.getItem('remainingToggle') === 'true';
+
+            document.getElementById('castFilter').value = castFilter;
+            document.getElementById('callFilter').value = callFilter;
+            document.getElementById('remainingToggle').checked = remainingToggle;
+        }
 
         // Function to toggle debug information panel
         function toggleDebugInfo() {
@@ -575,6 +610,9 @@
         // Initialize the page
         async function init() {
             try {
+                // Load saved filter state
+                loadFilterState();
+                
                 const data = await fetchSpreadsheetData();
                 scheduleData = processData(data);
                 filterTable();
